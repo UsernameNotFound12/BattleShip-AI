@@ -10,6 +10,7 @@
 
 #include "GameConfig.h"
 #include "Player.h"
+#include "AIPlayer.h"
 
 #include <memory>
 
@@ -45,6 +46,9 @@ namespace BattleShip {
         size_t cur_player_index_;
         std::istream& in_; // the stream to get input from
         std::ostream& out_; // the stream to display output to
+
+        std::unique_ptr<Player> make_ai(const GameConfig& game_config, int ai_number,
+                                         std::istream& in, std::ostream& out);
     };
 } // BattleShip
 

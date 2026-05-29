@@ -18,12 +18,16 @@ GameConfig.cpp GameConfig.h
         Orientation.h
         BoardCell.cpp
         BoardCell.h
+        AIPlayer.cpp
+        AIPlayer.h
 )
 
 
 target_include_directories(${SRC_LIB_NAME} PUBLIC .)
 target_compile_options(${SRC_LIB_NAME}  PRIVATE ${CXX_WARNINGS})
 
-add_executable(${EXE_NAME} main.cpp)
+add_executable(${EXE_NAME} main.cpp
+        AIPlayer.h
+        AIPlayer.cpp)
 target_link_libraries(${EXE_NAME} PRIVATE ${SRC_LIB_NAME})
 target_compile_options(${EXE_NAME} PRIVATE ${CXX_WARNINGS})

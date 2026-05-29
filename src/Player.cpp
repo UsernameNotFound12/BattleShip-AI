@@ -23,10 +23,10 @@ namespace BattleShip {
      * @param out : the stream to display output to
      * @param other_players : the other players in the game
      */
-    Player::Player(const GameConfig& game_config, std::istream& in, std::ostream& out,
-                   const std::vector<std::unique_ptr<Player> >& other_players) : name_(),
-        board_(game_config.board_num_rows(), game_config.board_num_cols()),
-        ship_healths_(game_config.ship_healths()), opponent_(nullptr) {
+    HumanPlayer::HumanPlayer(const GameConfig& game_config, std::istream& in, std::ostream& out,
+                   const std::vector<std::unique_ptr<Player> >& other_players) : Player("",
+        Board(game_config.board_num_rows(), game_config.board_num_cols()),
+        game_config.ship_healths(), nullptr) {
         do {
             out << "Enter your name: ";
             std::getline(in, name_);
@@ -67,6 +67,10 @@ namespace BattleShip {
         return board_;
     }
 
+    Board& Player::board() {
+        return board_;
+    }
+
     /**
      * Get this player's opponent
      * @return : this player's opponent
@@ -96,7 +100,7 @@ namespace BattleShip {
      * @param in : the stream to get input from
      * @param out : the stream to display output to
      */
-    void Player::place_ships(std::istream& in, std::ostream& out) {
+    void HumanPlayer::place_ships(std::istream& in, std::ostream& out) {
         for (const auto [ship_name, ship_health]: ship_healths_) {
             out << board_.view_as_visible() << std::endl;
             place_ship(ship_name, ship_health, in, out);
@@ -110,13 +114,13 @@ namespace BattleShip {
      * @param out : the stream to display output to
      * @return : a valid location to shoot out in the form row, col
      */
-    std::pair<int, int> Player::get_firing_location(std::istream& in, std::ostream& out) {
+    std::pair<int, int> HumanPlayer::get_firing_location(std::istream& in, std::ostream& out) {
         const std::string prompt = std::format(
             "{}, where would you like to fire?\n"
             "Enter your attack coordinate in the form row col:",
             name());
 
-        out << std::format("{}'s Firing Board\n{}\n\n", name(), opponent().board_.view_as_hidden());
+        out << std::format("{}'s Firing Board\n{}\n\n", name(), opponent().board().view_as_hidden());
         out << std::format("{}'s Placement Board\n{}\n", name(), board_.view_as_visible());
         while (true) {
             auto possible_row_and_col = get_row_and_column(prompt, in, out);
@@ -127,7 +131,7 @@ namespace BattleShip {
             if (not board_.is_on(row, col)) {
                 continue; //ask again
             }
-            if (opponent().board_.has_been_fired_at(row, col)) {
+            if (opponent().board().has_been_fired_at(row, col)) {
                 continue; //ask again
             }
             return std::make_pair(row, col);
@@ -172,7 +176,7 @@ namespace BattleShip {
      * @param in : the stream to get input from
      * @param out : the stream to display output to
      */
-    void Player::place_ship(const char ship_name, const int ship_length, std::istream& in, std::ostream& out) {
+    void HumanPlayer::place_ship(const char ship_name, const int ship_length, std::istream& in, std::ostream& out) {
         while (true) {
             auto orientation = get_orientation(ship_name, in, out);
             if (not orientation.has_value()) {
@@ -195,7 +199,7 @@ namespace BattleShip {
      * was entered, otherwise an empty optional
      */
     std::optional<Orientation>
-    Player::get_orientation(const char ship_name, std::istream& in, std::ostream& out) const {
+    HumanPlayer::get_orientation(const char ship_name, std::istream& in, std::ostream& out) const {
         static const std::unordered_map<std::string, Orientation> valid_input{
             {"horizontal", Orientation::HORIZONTAL},
             {"h", Orientation::HORIZONTAL},
@@ -227,7 +231,7 @@ namespace BattleShip {
      * @return : an optional containing the placement for this ship if it
      * is valid, otherwise an empty optional
      */
-    std::optional<ShipPlacement> Player::get_placement(const char ship_name, const int ship_length,
+    std::optional<ShipPlacement> HumanPlayer::get_placement(const char ship_name, const int ship_length,
                                                        Orientation orientation, std::istream& in,
                                                        std::ostream& out) const {
         std::string prompt = std::format("{}, enter the row and column you want to place {}, "
@@ -255,7 +259,7 @@ namespace BattleShip {
      * @return : an optional containing a row and column if a valid one was
      * entered, otherwise an empty optional
      */
-    std::optional<std::pair<int, int> > Player::get_row_and_column(const std::string& prompt, std::istream& in,
+    std::optional<std::pair<int, int> > HumanPlayer::get_row_and_column(const std::string& prompt, std::istream& in,
                                                                    std::ostream& out) const {
         out << prompt;
         std::string user_input;

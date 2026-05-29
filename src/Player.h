@@ -25,17 +25,20 @@ namespace BattleShip {
      */
     class Player {
     public:
-        Player(const GameConfig& game_config, std::istream& in, std::ostream& out,
-               const std::vector<std::unique_ptr<Player> >& other_players);
-
         Player(const std::string& name, const Board& board,
                const std::map<char, int>& ship_healths, Player* opponent);
+
+        virtual ~Player() = default;
+
+        virtual void on_hit_at(int /*row*/, int /*col*/) {}
 
         //getters
 
         [[nodiscard]] const std::string& name() const;
 
         [[nodiscard]] const Board& board() const;
+
+        [[nodiscard]] Board& board();
 
         [[nodiscard]] Player& opponent();
 
@@ -47,15 +50,34 @@ namespace BattleShip {
 
         //player actions
 
-        void place_ships(std::istream& in, std::ostream& out);
+        virtual void place_ships(std::istream& in, std::ostream& out) = 0;
 
-        std::pair<int, int> get_firing_location(std::istream& in, std::ostream& out);
+        virtual std::pair<int, int> get_firing_location(std::istream& in, std::ostream& out) = 0;
 
         FiringResult receive_fire_at(int row, int col);
 
         //checks
 
         [[nodiscard]] bool are_all_ships_destroyed() const;
+
+    protected:
+
+        //members
+
+        std::string name_;
+        Board board_;
+        std::map<char, int> ship_healths_;
+        Player* opponent_;
+    };
+
+    class HumanPlayer : public Player {
+    public:
+        HumanPlayer(const GameConfig& game_config, std::istream& in, std::ostream& out,
+                    const std::vector<std::unique_ptr<Player> >& other_players);
+
+        void place_ships(std::istream& in, std::ostream& out) override;
+
+        std::pair<int, int> get_firing_location(std::istream& in, std::ostream& out) override;
 
     private:
 
@@ -74,13 +96,6 @@ namespace BattleShip {
 
         [[nodiscard]] std::optional<std::pair<int, int> > get_row_and_column(
             const std::string& prompt, std::istream& in, std::ostream& out) const;
-
-        //members
-
-        std::string name_;
-        Board board_;
-        std::map<char, int> ship_healths_;
-        Player* opponent_;
     };
 } // BattleShip
 

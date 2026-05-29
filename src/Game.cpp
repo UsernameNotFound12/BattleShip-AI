@@ -5,6 +5,7 @@
 #include "Game.h"
 
 #include <algorithm>
+#include <sstream>
 
 namespace BattleShip {
     /**
@@ -15,13 +16,32 @@ namespace BattleShip {
      */
     Game::Game(const GameConfig& game_config, std::istream& in, std::ostream& out) : players_(), cur_player_index_(0),
         in_(in), out_(out) {
-        const int num_players = 2;
-        for (int i = 0; i < num_players; ++i) {
-            players_.push_back(std::make_unique<Player>(game_config, in, out, players_));
-            players_.at(i)->place_ships(in_, out_);
+        int mode = 0;
+        while (mode < 1 || mode > 3) {
+            out << "Select game mode:\n1. Human vs Human\n2. Human vs AI\n3. AI vs AI\nYour choice: ";
+            std::string line; std::getline(in, line);
+            std::istringstream ss(line); ss >> mode;
         }
 
-        for (int i = 0; i < num_players; ++i) {
+        int ai_count = 0;
+        if (mode == 1) {
+            for (int i = 0; i < 2; ++i) {
+                players_.push_back(std::make_unique<HumanPlayer>(game_config, in, out, players_));
+                players_.at(i)->place_ships(in_, out_);
+            }
+        } else if (mode == 2) {
+            players_.push_back(std::make_unique<HumanPlayer>(game_config, in, out, players_));
+            players_.at(0)->place_ships(in_, out_);
+            players_.push_back(make_ai(game_config, ++ai_count, in, out));
+            players_.at(1)->place_ships(in_, out_);
+        } else {
+            players_.push_back(make_ai(game_config, ++ai_count, in, out));
+            players_.at(0)->place_ships(in_, out_);
+            players_.push_back(make_ai(game_config, ++ai_count, in, out));
+            players_.at(1)->place_ships(in_, out_);
+        }
+
+        for (int i = 0; i < 2; ++i) {
             players_.at(i)->set_opponent(*players_.at((i + 1) % players_.size()));
         }
     }
@@ -76,6 +96,7 @@ namespace BattleShip {
                                     cur_player().opponent().name(), firing_result.get_ship_hit().value()
                 );
             }
+            cur_player().on_hit_at(row, col);
         } else {
             out_ << "Missed." << std::endl;
         }
@@ -109,5 +130,19 @@ namespace BattleShip {
      */
     const Player& Game::cur_player() const {
         return *players_.at(cur_player_index_);
+    }
+
+    std::unique_ptr<Player> Game::make_ai(const GameConfig& game_config, int ai_number,
+                                           std::istream& in, std::ostream& out) {
+        std::string ai_name = "AI " + std::to_string(ai_number);
+        int choice = 0;
+        while (choice < 1 || choice > 3) {
+            out << "Select AI type:\n1. Cheating AI\n2. Random AI\n3. Search and Destroy AI\nYour choice: ";
+            std::string line; std::getline(in, line);
+            std::istringstream ss(line); ss >> choice;
+        }
+        if (choice == 1) return std::make_unique<CheatingAI>(ai_name, game_config);
+        if (choice == 2) return std::make_unique<RandomAI>(ai_name, game_config);
+        return std::make_unique<SearchAndDestroyAI>(ai_name, game_config);
     }
 } // BattleShip
